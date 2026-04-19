@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>World History – 5000-Year Timeline</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#111827;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{padding:10px 20px;background:#1a2535;border-bottom:1px solid #2d3f55;flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:1.1rem;font-weight:700;color:#7dd3fc}
+header p{font-size:0.75rem;color:#64748b}
+#app{display:flex;flex:1;overflow:hidden}
+
+/* Timeline area */
+#timeline-wrap{flex:1;overflow:auto;position:relative}
+#timeline-inner{display:flex;min-height:100%}
+#year-axis{width:70px;flex-shrink:0;position:sticky;left:0;z-index:10;background:#111827;border-right:1px solid #1e3448}
+#columns-area{display:flex;flex:1;position:relative}
+.civ-col{display:flex;flex-direction:column;position:relative;min-width:90px;flex:1;border-right:1px solid #1e3448}
+.civ-header{position:sticky;top:0;z-index:9;background:#1a2535;border-bottom:2px solid;font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:6px 4px;text-align:center;min-height:44px;display:flex;align-items:center;justify-content:center;line-height:1.2}
+.era-tick{position:absolute;left:0;right:0;border-top:1px dashed #1e3448;pointer-events:none;display:flex;align-items:center}
+.year-label{font-size:0.62rem;color:#4a6380;padding:1px 4px;position:sticky;left:0;width:70px;flex-shrink:0}
+.block{position:absolute;left:2px;right:2px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:0.58rem;font-weight:600;text-align:center;line-height:1.2;padding:2px;transition:filter .15s,transform .1s;border:1px solid rgba(0,0,0,.2)}
+.block:hover{filter:brightness(1.25);transform:scaleX(1.02);z-index:5}
+.block.active{outline:2px solid #fff;z-index:6;filter:brightness(1.3)}
+.block span{overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+
+/* Panel */
+#panel{width:340px;flex-shrink:0;background:#162032;border-left:1px solid #243447;display:flex;flex-direction:column;overflow:hidden}
+#panel-inner{flex:1;overflow-y:auto;padding:20px}
+#panel-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#4a6380;gap:10px;text-align:center;padding:24px}
+#panel-placeholder svg{opacity:.3}
+#panel-detail{display:none}
+#panel-title{font-size:1.3rem;font-weight:700;color:#f1f5f9;margin-bottom:2px}
+#panel-subtitle{font-size:0.8rem;color:#7dd3fc;margin-bottom:4px}
+#panel-years{font-size:0.78rem;color:#64748b;margin-bottom:16px}
+.section-head{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#4a7fa5;border-bottom:1px solid #243447;padding-bottom:5px;margin-bottom:10px}
+.leader-row{display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:1px solid #1a2d42;gap:8px}
+.leader-name{font-size:0.82rem;font-weight:600;color:#e2e8f0}
+.leader-title{font-size:0.7rem;color:#94a3b8}
+.leader-years{font-size:0.72rem;color:#64748b;text-align:right;flex-shrink:0}
+.leader-duration{font-size:0.68rem;color:#4a7fa5}
+.event-row{padding:7px 0;border-bottom:1px solid #1a2d42;display:flex;gap:10px}
+.event-year{font-size:0.72rem;font-weight:700;color:#f59e0b;flex-shrink:0;width:60px}
+.event-desc{font-size:0.78rem;color:#cbd5e1;line-height:1.35}
+.section-block{margin-bottom:20px}
+.panel-color-bar{height:4px;border-radius:2px;margin-bottom:14px}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>World History – 5000-Year Timeline</h1>
+    <p>Click any empire or dynasty to explore its leaders and key events</p>
+  </div>
+  <div style="font-size:0.72rem;color:#4a6380">4000 BCE → Present</div>
+</header>
+<div id="app">
+  <div id="timeline-wrap">
+    <div id="timeline-inner">
+      <div id="year-axis"></div>
+      <div id="columns-area"></div>
+    </div>
+  </div>
+  <div id="panel">
+    <div id="panel-inner">
+      <div id="panel-placeholder">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+        </svg>
+        <span>Click a block to explore<br>leaders &amp; events</span>
+      </div>
+      <div id="panel-detail">
+        <div class="panel-color-bar" id="panel-bar"></div>
+        <div id="panel-title"></div>
+        <div id="panel-subtitle"></div>
+        <div id="panel-years"></div>
+        <div class="section-block">
+          <div class="section-head">Leaders &amp; Succession</div>
+          <div id="panel-leaders"></div>
+        </div>
+        <div class="section-block">
+          <div class="section-head">Major Historical Events</div>
+          <div id="panel-events"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Configuration ──────────────────────────────────────────────────────────────
+const MIN_YEAR = -4000;
+const MAX_YEAR = 2025;
+const PX_PER_YEAR = 0.18; // pixels per year — adjust for zoom
+
+// ── Civilizations (columns) ───────────────────────────────────────────────────
+const CIVS = [
+  { id:"americas",   label:"Americas",              color:"#7c3aed" },
+  { id:"latin",      label:"Latin / Western Europe",color:"#1d4ed8" },
+  { id:"germanic",   label:"Germanic / Northern Europe",color:"#0891b2" },
+  { id:"slavic",     label:"Slavic / Eastern Europe",color:"#0d9488" },
+  { id:"ottoman",    label:"Turkic / Ottoman",       color:"#b45309" },
+  { id:"egypt",      label:"Egypt / North Africa",   color:"#d97706" },
+  { id:"mesopo",     label:"Mesopotamia",            color:"#dc2626" },
+  { id:"persia",     label:"Persia / Iran",          color:"#9333ea" },
+  { id:"india",      label:"India / South Asia",     color:"#059669" },
+  { id:"china",      label:"China / East Asia",      color:"#e11d48" },
+  { id:"nomadic",    label:"Nomadic / Steppe",       color:"#92400e" },
+  { id:"japkorea",   label:"Japan / Korea",          color:"#be185d" },
+];
+
+// ── Helper ────────────────────────────────────────────────────────────────────
+function yr(y){ return typeof y==="string" ? (y.endsWith("BCE") ? -parseInt(y) : parseInt(y)) : y; }
+function yLabel(y){ return y<0 ? Math.abs(y)+" BCE" : y+" CE"; }
+function duration(s,e){ const d=e-s; return d===1?"1 year":d+" years"; }
+
+// ── Blocks data ───────────────────────────────────────────────────────────────
+// Each block: { civ, name, start, end, color, subtitle, leaders:[{name,title,start,end}], events:[{year,desc}] }
+
+const BLOCKS = [
+
+// ═══════════════ EGYPT ═══════════════
+{civ:"egypt",name:"Early Dynastic Egypt",start:-3100,end:-2686,color:"#f59e0b",
+ subtitle:"First & Second Dynasties",
+ leaders:[
+   {name:"Narmer (Menes)",title:"Pharaoh",start:-3100,end:-3050},
+   {name:"Hor-Aha",title:"Pharaoh",start:-3050,end:-3000},
+   {name:"Djer",title:"Pharaoh",start:-3000,end:-2950},
+   {name:"Den",title:"Pharaoh",start:-2950,end:-2900},
+   {name:"Qa'a",title:"Pharaoh",start:-2900,end:-2890},
+ ],
+ events:[
+   {year:-3100,desc:"Narmer unifies Upper and Lower Egypt; invention of hieroglyphic writing"},
+   {year:-3000,desc:"Memphis established as capital"},
+   {year:-2800,desc:"First use of papyrus for record-keeping"},
+ ]},
+{civ:"egypt",name:"Old Kingdom Egypt",start:-2686,end:-2181,color:"#f59e0b",
+ subtitle:"Age of Pyramid Builders",
+ leaders:[
+   {name:"Djoser",title:"Pharaoh",start:-2686,end:-2648},
+   {name:"Sneferu",title:"Pharaoh",start:-2613,end:-2589},
+   {name:"Khufu (Cheops)",title:"Pharaoh",start:-2589,end:-2566},
+   {name:"Khafre",title:"Pharaoh",start:-2558,end:-2532},
+   {name:"Menkaure",title:"Pharaoh",start:-2532,end:-2503},
+   {name:"Pepi I",title:"Pharaoh",start:-2332,end:-2287},
+   {name:"Pepi II",title:"Pharaoh (longest reign in history)",start:-2278,end:-2184},
+ ],
+ events:[
+   {year:-2650,desc:"Step Pyramid of Djoser built at Saqqara — first monumental stone structure"},
+   {year:-2560,desc:"Great Pyramid of Giza completed for Pharaoh Khufu"},
+   {year:-2530,desc:"Great Sphinx of Giza constructed"},
+   {year:-2200,desc:"Collapse of Old Kingdom — First Intermediate Period begins"},
+ ]},
+{civ:"egypt",name:"Middle Kingdom Egypt",start:-2055,end:-1650,color:"#fbbf24",
+ subtitle:"Reunification & Cultural Flowering",
+ leaders:[
+   {name:"Mentuhotep II",title:"Pharaoh",start:-2055,end:-2004},
+   {name:"Amenemhat I",title:"Pharaoh",start:-1991,end:-1962},
+   {name:"Senusret I",title:"Pharaoh",start:-1971,end:-1926},
+   {name:"Senusret III",title:"Pharaoh",start:-1878,end:-1839},
+   {name:"Amenemhat III",title:"Pharaoh",start:-1860,end:-1814},
+ ],
+ events:[
+   {year:-2055,desc:"Mentuhotep II reunifies Egypt after civil war"},
+   {year:-1950,desc:"Trade expeditions to Punt; expansion into Nubia"},
+   {year:-1800,desc:"Mathematical papyri (Rhind Papyrus) composed"},
+ ]},
+{civ:"egypt",name:"New Kingdom Egypt",start:-1550,end:-1070,color:"#f97316",
+ subtitle:"Empire at its Height",
+ leaders:[
+   {name:"Ahmose I",title:"Pharaoh",start:-1550,end:-1525},
+   {name:"Thutmose III",title:"Pharaoh — The Napoleon of Egypt",start:-1479,end:-1425},
+   {name:"Hatshepsut",title:"Pharaoh",start:-1473,end:-1458},
+   {name:"Akhenaten",title:"Pharaoh",start:-1353,end:-1336},
+   {name:"Tutankhamun",title:"Pharaoh",start:-1336,end:-1327},
+   {name:"Ramesses II (the Great)",title:"Pharaoh",start:-1279,end:-1213},
+   {name:"Ramesses III",title:"Pharaoh",start:-1186,end:-1155},
+ ],
+ events:[
+   {year:-1550,desc:"Ahmose I expels Hyksos; New Kingdom begins"},
+   {year:-1457,desc:"Battle of Megiddo — Thutmose III defeats Canaanite coalition"},
+   {year:-1353,desc:"Akhenaten introduces monotheistic worship of Aten"},
+   {year:-1274,desc:"Battle of Kadesh — Ramesses II vs Hittites; world's first peace treaty signed"},
+   {year:-1180,desc:"Sea Peoples invade; Bronze Age Collapse begins"},
+ ]},
+{civ:"egypt",name:"Late Period Egypt",start:-664,end:-332,color:"#d97706",
+ subtitle:"Saite & Persian Rule",
+ leaders:[
+   {name:"Psamtik I",title:"Pharaoh",start:-664,end:-610},
+   {name:"Necho II",title:"Pharaoh",start:-610,end:-595},
+   {name:"Amasis II",title:"Pharaoh",start:-570,end:-526},
+ ],
+ events:[
+   {year:-664,desc:"Assyrians sack Thebes; Saite dynasty established with Assyrian support"},
+   {year:-525,desc:"Persian Empire under Cambyses II conquers Egypt"},
+   {year:-404,desc:"Egypt briefly regains independence from Persia"},
+ ]},
+{civ:"egypt",name:"Ptolemaic Egypt",start:-305,end:-30,color:"#b45309",
+ subtitle:"Greek Pharaohs of Egypt",
+ leaders:[
+   {name:"Ptolemy I Soter",title:"Pharaoh",start:-305,end:-283},
+   {name:"Ptolemy II Philadelphus",title:"Pharaoh",start:-283,end:-246},
+   {name:"Cleopatra VII",title:"Pharaoh (last)",start:-51,end:-30},
+ ],
+ events:[
+   {year:-305,desc:"Ptolemy I declares himself king; founds Ptolemaic dynasty"},
+   {year:-283,desc:"Library of Alexandria established as world's greatest center of learning"},
+   {year:-48,desc:"Julius Caesar arrives in Egypt; alliance with Cleopatra VII"},
+   {year:-30,desc:"Cleopatra VII dies; Egypt becomes a Roman province"},
+ ]},
+
+// ═══════════════ MESOPOTAMIA ═══════════════
+{civ:"mesopo",name:"Sumer",start:-3500,end:-2334,color:"#ef4444",
+ subtitle:"First Civilization — City-States",
+ leaders:[
+   {name:"Gilgamesh",title:"King of Uruk (legendary)",start:-2700,end:-2650},
+   {name:"Ur-Namma",title:"King of Ur",start:-2112,end:-2095},
+ ],
+ events:[
+   {year:-3500,desc:"Invention of writing (cuneiform) in Uruk"},
+   {year:-3200,desc:"City-states of Ur, Uruk, Eridu, Lagash flourish"},
+   {year:-2900,desc:"Epic of Gilgamesh composed — world's oldest literature"},
+   {year:-2500,desc:"Royal tombs of Ur reveal extraordinary craftsmanship"},
+ ]},
+{civ:"mesopo",name:"Akkadian Empire",start:-2334,end:-2154,color:"#dc2626",
+ subtitle:"World's First Empire",
+ leaders:[
+   {name:"Sargon of Akkad",title:"Emperor (founder)",start:-2334,end:-2279},
+   {name:"Rimush",title:"Emperor",start:-2279,end:-2270},
+   {name:"Naram-Sin",title:"Emperor",start:-2254,end:-2218},
+ ],
+ events:[
+   {year:-2334,desc:"Sargon of Akkad conquers Sumer — world's first empire founded"},
+   {year:-2254,desc:"Naram-Sin defeats Lullubi; declares himself 'God-King'"},
+   {year:-2193,desc:"Gutian invasion; Akkadian Empire collapses"},
+ ]},
+{civ:"mesopo",name:"Babylonian Empire",start:-1894,end:-539,color:"#b91c1c",
+ subtitle:"Old & Neo-Babylonian Periods",
+ leaders:[
+   {name:"Hammurabi",title:"King",start:-1792,end:-1750},
+   {name:"Nebuchadnezzar I",title:"King",start:-1125,end:-1104},
+   {name:"Nebuchadnezzar II",title:"King",start:-605,end:-562},
+   {name:"Nabonidus",title:"King (last)",start:-556,end:-539},
+ ],
+ events:[
+   {year:-1754,desc:"Code of Hammurabi enacted — one of the earliest legal codes"},
+   {year:-1600,desc:"Hittite raid sacks Babylon; Kassite dynasty takes over"},
+   {year:-605,desc:"Nebuchadnezzar II defeats Egyptians at Carchemish"},
+   {year:-597,desc:"First siege of Jerusalem; Jewish exile to Babylon begins"},
+   {year:-575,desc:"Hanging Gardens of Babylon constructed (legendary)"},
+   {year:-539,desc:"Cyrus the Great captures Babylon; allows Jews to return"},
+ ]},
+{civ:"mesopo",name:"Assyrian Empire",start:-900,end:-612,color:"#7f1d1d",
+ subtitle:"Iron Age Military Superpower",
+ leaders:[
+   {name:"Ashurnasirpal II",title:"King",start:-883,end:-859},
+   {name:"Tiglath-Pileser III",title:"King",start:-745,end:-727},
+   {name:"Sargon II",title:"King",start:-722,end:-705},
+   {name:"Sennacherib",title:"King",start:-705,end:-681},
+   {name:"Ashurbanipal",title:"King",start:-669,end:-627},
+ ],
+ events:[
+   {year:-883,desc:"Assyrian expansion begins under Ashurnasirpal II"},
+   {year:-722,desc:"Sargon II destroys Kingdom of Israel; 10 tribes exiled"},
+   {year:-701,desc:"Sennacherib invades Judah; besieges Jerusalem"},
+   {year:-668,desc:"Ashurbanipal's Library at Nineveh — 30,000 clay tablets"},
+   {year:-612,desc:"Nineveh sacked by Babylonians and Medes; Assyrian Empire collapses"},
+ ]},
+
+// ═══════════════ PERSIA ═══════════════
+{civ:"persia",name:"Achaemenid Empire",start:-550,end:-330,color:"#9333ea",
+ subtitle:"First Persian Empire",
+ leaders:[
+   {name:"Cyrus II (the Great)",title:"King of Kings",start:-559,end:-530},
+   {name:"Cambyses II",title:"King of Kings",start:-530,end:-522},
+   {name:"Darius I (the Great)",title:"King of Kings",start:-522,end:-486},
+   {name:"Xerxes I",title:"King of Kings",start:-486,end:-465},
+   {name:"Artaxerxes I",title:"King of Kings",start:-465,end:-424},
+   {name:"Darius III",title:"King of Kings (last)",start:-336,end:-330},
+ ],
+ events:[
+   {year:-550,desc:"Cyrus the Great defeats Median Empire; founds Achaemenid dynasty"},
+   {year:-539,desc:"Cyrus captures Babylon; issues Cyrus Cylinder — first human rights declaration"},
+   {year:-525,desc:"Cambyses II conquers Egypt"},
+   {year:-490,desc:"Battle of Marathon — Persian invasion of Greece defeated"},
+   {year:-480,desc:"Battle of Thermopylae and Salamis; Xerxes burns Athens"},
+   {year:-330,desc:"Alexander the Great destroys Persepolis; end of Achaemenid Empire"},
+ ]},
+{civ:"persia",name:"Parthian Empire",start:-247,end:224,color:"#7e22ce",
+ subtitle:"Arsacid Dynasty",
+ leaders:[
+   {name:"Arsaces I",title:"King",start:-247,end:-217},
+   {name:"Mithridates I",title:"King",start:-171,end:-138},
+   {name:"Mithridates II",title:"King of Kings",start:-123,end:-88},
+ ],
+ events:[
+   {year:-247,desc:"Arsaces I founds Parthian Empire in northeastern Iran"},
+   {year:-53,desc:"Battle of Carrhae — Parthians decisively defeat Roman army; Crassus killed"},
+   {year:116,desc:"Trajan briefly captures Ctesiphon"},
+ ]},
+{civ:"persia",name:"Sassanid Empire",start:224,end:651,color:"#6d28d9",
+ subtitle:"Last Great Pre-Islamic Persian Empire",
+ leaders:[
+   {name:"Ardashir I",title:"Shah",start:224,end:242},
+   {name:"Shapur I",title:"Shah",start:242,end:272},
+   {name:"Khosrow I (the Great)",title:"Shah",start:531,end:579},
+   {name:"Khosrow II",title:"Shah",start:590,end:628},
+   {name:"Yazdegerd III",title:"Shah (last)",start:632,end:651},
+ ],
+ events:[
+   {year:224,desc:"Ardashir I defeats Parthians; founds Sassanid dynasty"},
+   {year:260,desc:"Shapur I captures Roman Emperor Valerian — first Roman emperor taken prisoner"},
+   {year:531,desc:"Khosrow I's golden age: major legal, administrative, and cultural reforms"},
+   {year:627,desc:"Byzantine-Sassanid Wars exhaust both empires"},
+   {year:651,desc:"Arab Muslim armies conquer Persia; Sassanid Empire ends"},
+ ]},
+{civ:"persia",name:"Safavid Empire",start:1501,end:1736,color:"#a855f7",
+ subtitle:"Shia Islam made state religion",
+ leaders:[
+   {name:"Shah Ismail I",title:"Shah",start:1501,end:1524},
+   {name:"Shah Tahmasp I",title:"Shah",start:1524,end:1576},
+   {name:"Shah Abbas I (the Great)",title:"Shah",start:1588,end:1629},
+   {name:"Shah Suleiman I",title:"Shah",start:1666,end:1694},
+   {name:"Sultan Husayn",title:"Shah (last)",start:1694,end:1722},
+ ],
+ events:[
+   {year:1501,desc:"Shah Ismail I founds Safavid dynasty; declares Twelver Shia Islam state religion"},
+   {year:1514,desc:"Battle of Chaldiran — Ottomans defeat Safavids with artillery"},
+   {year:1598,desc:"Shah Abbas I moves capital to Isfahan; cultural golden age"},
+   {year:1722,desc:"Afghan invasion; Isfahan falls; Safavid power collapses"},
+ ]},
+
+// ═══════════════ LATIN / WESTERN EUROPE ═══════════════
+{civ:"latin",name:"Greek City-States",start:-800,end:-146,color:"#3b82f6",
+ subtitle:"Birthplace of Democracy & Philosophy",
+ leaders:[
+   {name:"Solon",title:"Archon of Athens",start:-594,end:-574},
+   {name:"Cleisthenes",title:"Reformer of Athens",start:-508,end:-507},
+   {name:"Pericles",title:"Strategos of Athens",start:-461,end:-429},
+   {name:"Philip II",title:"King of Macedon",start:-359,end:-336},
+   {name:"Alexander III (the Great)",title:"King of Macedon & Persia",start:-336,end:-323},
+ ],
+ events:[
+   {year:-776,desc:"First Olympic Games held at Olympia"},
+   {year:-508,desc:"Cleisthenes establishes Athenian democracy"},
+   {year:-490,desc:"Battle of Marathon — Athens repels Persian invasion"},
+   {year:-431,desc:"Peloponnesian War begins — Athens vs Sparta"},
+   {year:-399,desc:"Trial and death of Socrates"},
+   {year:-338,desc:"Philip II unites Greece at Battle of Chaeronea"},
+   {year:-323,desc:"Death of Alexander the Great; empire divided among Diadochi"},
+ ]},
+{civ:"latin",name:"Roman Republic",start:-509,end:-27,color:"#2563eb",
+ subtitle:"Senate & People of Rome (SPQR)",
+ leaders:[
+   {name:"Lucius Junius Brutus",title:"First Consul",start:-509,end:-509},
+   {name:"Scipio Africanus",title:"General / Consul",start:-205,end:-183},
+   {name:"Gaius Marius",title:"Consul (7 times)",start:-107,end:-86},
+   {name:"Sulla",title:"Dictator",start:-82,end:-79},
+   {name:"Julius Caesar",title:"Dictator perpetuo",start:-49,end:-44},
+   {name:"Mark Antony & Octavian",title:"Triumvirs",start:-44,end:-27},
+ ],
+ events:[
+   {year:-509,desc:"Roman Republic founded; Tarquinius Superbus expelled"},
+   {year:-264,desc:"First Punic War against Carthage begins"},
+   {year:-218,desc:"Hannibal crosses the Alps; Second Punic War"},
+   {year:-146,desc:"Carthage destroyed; Greece becomes Roman province"},
+   {year:-73,desc:"Spartacus leads slave rebellion"},
+   {year:-44,desc:"Julius Caesar assassinated on the Ides of March"},
+   {year:-31,desc:"Battle of Actium; Octavian defeats Antony and Cleopatra"},
+ ]},
+{civ:"latin",name:"Roman Empire",start:-27,end:476,color:"#1d4ed8",
+ subtitle:"From Augustus to the Fall",
+ leaders:[
+   {name:"Augustus (Octavian)",title:"Emperor",start:-27,end:14},
+   {name:"Tiberius",title:"Emperor",start:14,end:37},
+   {name:"Nero",title:"Emperor",start:54,end:68},
+   {name:"Vespasian",title:"Emperor",start:69,end:79},
+   {name:"Trajan",title:"Emperor",start:98,end:117},
+   {name:"Hadrian",title:"Emperor",start:117,end:138},
+   {name:"Marcus Aurelius",title:"Emperor / Philosopher",start:161,end:180},
+   {name:"Diocletian",title:"Emperor",start:284,end:305},
+   {name:"Constantine I (the Great)",title:"Emperor",start:306,end:337},
+   {name:"Romulus Augustulus",title:"Emperor (last Western)",start:475,end:476},
+ ],
+ events:[
+   {year:-27,desc:"Augustus becomes first Emperor; Pax Romana begins"},
+   {year:64,desc:"Great Fire of Rome; Nero persecutes Christians"},
+   {year:70,desc:"Titus destroys the Temple of Jerusalem"},
+   {year:79,desc:"Mount Vesuvius erupts; Pompeii buried"},
+   {year:117,desc:"Roman Empire at its greatest territorial extent under Trajan"},
+   {year:212,desc:"Caracalla grants Roman citizenship to all free inhabitants"},
+   {year:313,desc:"Edict of Milan — Constantine legalizes Christianity"},
+   {year:380,desc:"Theodosius makes Christianity the state religion"},
+   {year:410,desc:"Visigoths sack Rome — first time in 800 years"},
+   {year:476,desc:"Romulus Augustulus deposed by Odoacer; Western Empire falls"},
+ ]},
+{civ:"latin",name:"Byzantine Empire",start:330,end:1453,color:"#7c3aed",
+ subtitle:"Eastern Roman Empire",
+ leaders:[
+   {name:"Constantine I",title:"Emperor",start:330,end:337},
+   {name:"Justinian I (the Great)",title:"Emperor",start:527,end:565},
+   {name:"Heraclius",title:"Emperor",start:610,end:641},
+   {name:"Basil II (Bulgar Slayer)",title:"Emperor",start:976,end:1025},
+   {name:"Alexios I Komnenos",title:"Emperor",start:1081,end:1118},
+   {name:"Constantine XI Palaiologos",title:"Emperor (last)",start:1449,end:1453},
+ ],
+ events:[
+   {year:330,desc:"Constantinople founded as new Roman capital on the Bosphorus"},
+   {year:537,desc:"Hagia Sophia completed — greatest church of its time"},
+   {year:565,desc:"Justinian's Corpus Juris Civilis codifies Roman law"},
+   {year:1054,desc:"Great Schism splits Christianity into Catholic and Orthodox"},
+   {year:1204,desc:"Fourth Crusade sacks Constantinople"},
+   {year:1453,desc:"Ottoman Turks conquer Constantinople; end of Byzantine Empire"},
+ ]},
+{civ:"latin",name:"Holy Roman Empire",start:800,end:1806,color:"#1e40af",
+ subtitle:"Neither Holy, nor Roman, nor an Empire",
+ leaders:[
+   {name:"Charlemagne",title:"Emperor",start:800,end:814},
+   {name:"Otto I (the Great)",title:"Emperor",start:962,end:973},
+   {name:"Frederick I Barbarossa",title:"Emperor",start:1155,end:1190},
+   {name:"Frederick II",title:"Emperor",start:1220,end:1250},
+   {name:"Maximilian I",title:"Emperor",start:1508,end:1519},
+   {name:"Charles V",title:"Emperor",start:1519,end:1556},
+   {name:"Francis II",title:"Emperor (last)",start:1792,end:1806},
+ ],
+ events:[
+   {year:800,desc:"Pope Leo III crowns Charlemagne as Emperor on Christmas Day"},
+   {year:1076,desc:"Investiture Controversy — Pope Gregory VII excommunicates Henry IV"},
+   {year:1517,desc:"Martin Luther posts 95 Theses; Protestant Reformation begins"},
+   {year:1618,desc:"Thirty Years' War begins — devastating Central European conflict"},
+   {year:1648,desc:"Peace of Westphalia ends Thirty Years' War; modern state system emerges"},
+   {year:1806,desc:"Napoleon dissolves Holy Roman Empire"},
+ ]},
+{civ:"latin",name:"Portuguese Empire",start:1415,end:1999,color:"#1e3a8a",
+ subtitle:"First Global Maritime Empire",
+ leaders:[
+   {name:"John I",title:"King",start:1385,end:1433},
+   {name:"Manuel I (the Fortunate)",title:"King",start:1495,end:1521},
+   {name:"John II",title:"King",start:1481,end:1495},
+ ],
+ events:[
+   {year:1415,desc:"Portugal captures Ceuta; Age of Exploration begins"},
+   {year:1488,desc:"Bartolomeu Dias rounds Cape of Good Hope"},
+   {year:1498,desc:"Vasco da Gama reaches India via sea route"},
+   {year:1500,desc:"Pedro Álvares Cabral claims Brazil"},
+   {year:1999,desc:"Macau returned to China — end of Portuguese Empire"},
+ ]},
+{civ:"latin",name:"Spanish Empire",start:1492,end:1898,color:"#1d4ed8",
+ subtitle:"Empire on which the Sun Never Set",
+ leaders:[
+   {name:"Ferdinand II & Isabella I",title:"Monarchs",start:1479,end:1516},
+   {name:"Charles I (Charles V of HRE)",title:"King",start:1516,end:1556},
+   {name:"Philip II",title:"King",start:1556,end:1598},
+   {name:"Philip V",title:"King",start:1700,end:1746},
+ ],
+ events:[
+   {year:1492,desc:"Columbus reaches Americas; Reconquista completes with fall of Granada"},
+   {year:1519,desc:"Hernán Cortés begins conquest of Aztec Empire"},
+   {year:1532,desc:"Pizarro conquers Inca Empire"},
+   {year:1571,desc:"Battle of Lepanto — Spain defeats Ottoman fleet"},
+   {year:1588,desc:"Spanish Armada defeated by England"},
+   {year:1898,desc:"Spanish-American War; Spain loses Cuba, Puerto Rico, Philippines"},
+ ]},
+{civ:"latin",name:"French Empire",start:1804,end:1815,color:"#1d4ed8",
+ subtitle:"Napoleonic Empire",
+ leaders:[
+   {name:"Napoleon Bonaparte",title:"Emperor",start:1804,end:1815},
+ ],
+ events:[
+   {year:1804,desc:"Napoleon crowns himself Emperor; Napoleonic Code enacted"},
+   {year:1805,desc:"Battle of Austerlitz — Napoleon's greatest victory"},
+   {year:1812,desc:"Disastrous invasion of Russia; Grande Armée destroyed"},
+   {year:1815,desc:"Battle of Waterloo; Napoleon exiled to St Helena"},
+ ]},
+{civ:"latin",name:"United States",start:1776,end:2025,color:"#1e40af",
+ subtitle:"American Republic",
+ leaders:[
+   {name:"George Washington",title:"President",start:1789,end:1797},
+   {name:"Abraham Lincoln",title:"President",start:1861,end:1865},
+   {name:"Theodore Roosevelt",title:"President",start:1901,end:1909},
+   {name:"Franklin D. Roosevelt",title:"President",start:1933,end:1945},
+   {name:"Harry S. Truman",title:"President",start:1945,end:1953},
+   {name:"John F. Kennedy",title:"President",start:1961,end:1963},
+   {name:"Ronald Reagan",title:"President",start:1981,end:1989},
+   {name:"Barack Obama",title:"President",start:2009,end:2017},
+   {name:"Donald Trump",title:"President",start:2017,end:2021},
+   {name:"Joe Biden",title:"President",start:2021,end:2025},
+   {name:"Donald Trump",title:"President",start:2025,end:2025},
+ ],
+ events:[
+   {year:1776,desc:"Declaration of Independence from Britain"},
+   {year:1787,desc:"U.S. Constitution ratified"},
+   {year:1861,desc:"Civil War begins; 620,000 Americans die"},
+   {year:1865,desc:"13th Amendment abolishes slavery"},
+   {year:1941,desc:"Pearl Harbor attacked; U.S. enters World War II"},
+   {year:1945,desc:"Atomic bombs dropped on Hiroshima and Nagasaki"},
+   {year:1969,desc:"Neil Armstrong walks on the Moon"},
+   {year:2001,desc:"September 11 terrorist attacks"},
+ ]},
+
+// ═══════════════ OTTOMAN / TURKIC ═══════════════
+{civ:"ottoman",name:"Arab Caliphates",start:632,end:1258,color:"#d97706",
+ subtitle:"Rashidun, Umayyad & Abbasid",
+ leaders:[
+   {name:"Abu Bakr",title:"Caliph",start:632,end:634},
+   {name:"Umar ibn al-Khattab",title:"Caliph",start:634,end:644},
+   {name:"Uthman ibn Affan",title:"Caliph",start:644,end:656},
+   {name:"Ali ibn Abi Talib",title:"Caliph",start:656,end:661},
+   {name:"Muawiyah I",title:"Caliph (Umayyad)",start:661,end:680},
+   {name:"Harun al-Rashid",title:"Caliph (Abbasid)",start:786,end:809},
+   {name:"al-Mamun",title:"Caliph",start:813,end:833},
+   {name:"al-Mutasim",title:"Caliph (last powerful)",start:833,end:842},
+ ],
+ events:[
+   {year:632,desc:"Prophet Muhammad dies; Abu Bakr becomes first Caliph"},
+   {year:636,desc:"Battle of al-Qadisiyya — Arabs defeat Sassanid Persia"},
+   {year:638,desc:"Arabs capture Jerusalem"},
+   {year:661,desc:"Umayyad Caliphate founded; capital moves to Damascus"},
+   {year:711,desc:"Arabs conquer Iberia (Spain); reach their westernmost extent"},
+   {year:750,desc:"Abbasid Revolution; capital moves to Baghdad"},
+   {year:830,desc:"House of Wisdom in Baghdad — golden age of Islamic science"},
+   {year:1258,desc:"Mongols sack Baghdad; Abbasid Caliphate destroyed"},
+ ]},
+{civ:"ottoman",name:"Ottoman Empire",start:1299,end:1922,color:"#b45309",
+ subtitle:"Ruler of Three Continents",
+ leaders:[
+   {name:"Osman I",title:"Sultan (founder)",start:1299,end:1326},
+   {name:"Murad I",title:"Sultan",start:1362,end:1389},
+   {name:"Mehmed II (the Conqueror)",title:"Sultan",start:1451,end:1481},
+   {name:"Selim I (the Grim)",title:"Sultan",start:1512,end:1520},
+   {name:"Suleiman I (the Magnificent)",title:"Sultan",start:1520,end:1566},
+   {name:"Selim II",title:"Sultan",start:1566,end:1574},
+   {name:"Murad IV",title:"Sultan",start:1623,end:1640},
+   {name:"Abdul Hamid II",title:"Sultan",start:1876,end:1909},
+   {name:"Mehmed VI",title:"Sultan (last)",start:1918,end:1922},
+ ],
+ events:[
+   {year:1299,desc:"Osman I founds Ottoman dynasty in Anatolia"},
+   {year:1389,desc:"Battle of Kosovo — Ottomans defeat Serbian Empire"},
+   {year:1453,desc:"Mehmed II conquers Constantinople; renames it Istanbul"},
+   {year:1516,desc:"Selim I conquers Egypt and becomes Caliph of Islam"},
+   {year:1529,desc:"Suleiman besieges Vienna — high-water mark of Ottoman expansion"},
+   {year:1683,desc:"Second Ottoman siege of Vienna fails; decline begins"},
+   {year:1821,desc:"Greek War of Independence"},
+   {year:1914,desc:"Ottomans enter World War I on German side"},
+   {year:1922,desc:"Turkish Grand National Assembly abolishes Sultanate"},
+ ]},
+{civ:"ottoman",name:"Republic of Turkey",start:1923,end:2025,color:"#92400e",
+ subtitle:"Modern Turkish State",
+ leaders:[
+   {name:"Mustafa Kemal Atatürk",title:"President",start:1923,end:1938},
+   {name:"İsmet İnönü",title:"President",start:1938,end:1950},
+   {name:"Recep Tayyip Erdoğan",title:"President",start:2014,end:2025},
+ ],
+ events:[
+   {year:1923,desc:"Treaty of Lausanne; Republic of Turkey proclaimed"},
+   {year:1924,desc:"Caliphate abolished; major secularizing reforms begin"},
+   {year:1952,desc:"Turkey joins NATO"},
+   {year:2016,desc:"Failed coup attempt against Erdoğan government"},
+ ]},
+
+// ═══════════════ INDIA ═══════════════
+{civ:"india",name:"Indus Valley Civilization",start:-3300,end:-1300,color:"#059669",
+ subtitle:"Harappan Culture",
+ leaders:[
+   {name:"Unknown rulers",title:"(no written records deciphered)",start:-2600,end:-1900},
+ ],
+ events:[
+   {year:-3300,desc:"Indus Valley Civilization emerges in modern Pakistan/India"},
+   {year:-2600,desc:"Mohenjo-daro and Harappa flourish with advanced urban planning"},
+   {year:-2000,desc:"Indus script used but still undeciphered"},
+   {year:-1300,desc:"Harappan cities decline — possible climate change/drought"},
+ ]},
+{civ:"india",name:"Maurya Empire",start:-322,end:-185,color:"#10b981",
+ subtitle:"First Pan-Indian Empire",
+ leaders:[
+   {name:"Chandragupta Maurya",title:"Emperor (founder)",start:-322,end:-298},
+   {name:"Bindusara",title:"Emperor",start:-298,end:-272},
+   {name:"Ashoka the Great",title:"Emperor",start:-268,end:-232},
+ ],
+ events:[
+   {year:-322,desc:"Chandragupta Maurya founds empire with help of Chanakya (Kautilya)"},
+   {year:-305,desc:"Chandragupta defeats Seleucus Nicator; controls Northwest India"},
+   {year:-261,desc:"Ashoka wins Battle of Kalinga; horrified by carnage, converts to Buddhism"},
+   {year:-250,desc:"Ashoka spreads Buddhism across Asia; Edicts of Ashoka carved on pillars"},
+ ]},
+{civ:"india",name:"Gupta Empire",start:320,end:550,color:"#34d399",
+ subtitle:"Golden Age of India",
+ leaders:[
+   {name:"Chandragupta I",title:"Emperor",start:320,end:335},
+   {name:"Samudragupta",title:"Emperor",start:335,end:380},
+   {name:"Chandragupta II (Vikramaditya)",title:"Emperor",start:380,end:415},
+   {name:"Kumaragupta I",title:"Emperor",start:415,end:455},
+   {name:"Skandagupta",title:"Emperor (last great)",start:455,end:467},
+ ],
+ events:[
+   {year:320,desc:"Gupta Empire founded; golden age of science, art, and literature"},
+   {year:400,desc:"Kalidasa writes Shakuntala; Aryabhata develops mathematics and astronomy"},
+   {year:499,desc:"Aryabhata calculates pi and proposes Earth rotates on its axis"},
+   {year:550,desc:"Huna invasions collapse Gupta Empire"},
+ ]},
+{civ:"india",name:"Mughal Empire",start:1526,end:1857,color:"#065f46",
+ subtitle:"Timurid Dynasty of India",
+ leaders:[
+   {name:"Babur",title:"Emperor (founder)",start:1526,end:1530},
+   {name:"Humayun",title:"Emperor",start:1530,end:1556},
+   {name:"Akbar the Great",title:"Emperor",start:1556,end:1605},
+   {name:"Jahangir",title:"Emperor",start:1605,end:1627},
+   {name:"Shah Jahan",title:"Emperor",start:1628,end:1658},
+   {name:"Aurangzeb",title:"Emperor",start:1658,end:1707},
+   {name:"Bahadur Shah II",title:"Emperor (last)",start:1837,end:1857},
+ ],
+ events:[
+   {year:1526,desc:"Battle of Panipat — Babur defeats Delhi Sultanate; Mughal Empire founded"},
+   {year:1556,desc:"Second Battle of Panipat; Akbar secures Mughal dominance"},
+   {year:1600,desc:"Akbar's religious tolerance policy — Din-i-Ilahi syncretic movement"},
+   {year:1631,desc:"Shah Jahan begins construction of Taj Mahal (completed 1653)"},
+   {year:1658,desc:"Aurangzeb imprisons father Shah Jahan; reimpose sharia law"},
+   {year:1857,desc:"Indian Rebellion; East India Company abolished; British Crown takes direct rule"},
+ ]},
+
+// ═══════════════ CHINA ═══════════════
+{civ:"china",name:"Xia Dynasty",start:-2070,end:-1600,color:"#e11d48",
+ subtitle:"Legendary First Dynasty",
+ leaders:[
+   {name:"Yu the Great",title:"King (founder)",start:-2070,end:-2025},
+   {name:"Jie",title:"King (last)",start:-1728,end:-1600},
+ ],
+ events:[
+   {year:-2070,desc:"Yu the Great controls floods; founds Xia Dynasty"},
+   {year:-1600,desc:"Xia overthrown by Shang; may be semi-legendary"},
+ ]},
+{civ:"china",name:"Shang Dynasty",start:-1600,end:-1046,color:"#be123c",
+ subtitle:"First Historically Verified Dynasty",
+ leaders:[
+   {name:"Tang (Chengtang)",title:"King (founder)",start:-1600,end:-1588},
+   {name:"Wu Ding",title:"King",start:-1250,end:-1192},
+   {name:"Di Xin",title:"King (last)",start:-1086,end:-1046},
+ ],
+ events:[
+   {year:-1600,desc:"Shang Dynasty founded; bronze casting reaches high art"},
+   {year:-1300,desc:"Oracle bone script — earliest confirmed Chinese writing"},
+   {year:-1200,desc:"Capital moved to Anyang; major ceremonial bronze works"},
+   {year:-1046,desc:"Battle of Muye — Shang defeated by Zhou"},
+ ]},
+{civ:"china",name:"Zhou Dynasty",start:-1046,end:-256,color:"#e11d48",
+ subtitle:"Western & Eastern Zhou",
+ leaders:[
+   {name:"King Wu of Zhou",title:"King (founder)",start:-1046,end:-1043},
+   {name:"King Xuan",title:"King",start:-827,end:-782},
+   {name:"King Nan",title:"King (last)",start:-314,end:-256},
+ ],
+ events:[
+   {year:-1046,desc:"Zhou Dynasty founded; feudal system established"},
+   {year:-770,desc:"Capital moves east; Eastern Zhou begins"},
+   {year:-551,desc:"Confucius born; Hundred Schools of Thought flourish"},
+   {year:-544,desc:"Sun Tzu writes The Art of War"},
+   {year:-475,desc:"Warring States Period begins — seven kingdoms compete"},
+ ]},
+{civ:"china",name:"Qin Dynasty",start:-221,end:-206,color:"#9f1239",
+ subtitle:"First Imperial Unification",
+ leaders:[
+   {name:"Qin Shi Huang (Ying Zheng)",title:"First Emperor of China",start:-221,end:-210},
+   {name:"Qin Er Shi (Hu Hai)",title:"Second Emperor",start:-210,end:-207},
+ ],
+ events:[
+   {year:-221,desc:"Qin Shi Huang unifies China for the first time"},
+   {year:-221,desc:"Standardization of weights, measures, writing, and coinage"},
+   {year:-214,desc:"Construction of Great Wall intensified"},
+   {year:-210,desc:"Terracotta Army of 8,000 soldiers buried with Qin Shi Huang"},
+   {year:-206,desc:"Qin Dynasty collapses after peasant rebellions"},
+ ]},
+{civ:"china",name:"Han Dynasty",start:-206,end:220,color:"#e11d48",
+ subtitle:"Western & Eastern Han — Golden Age",
+ leaders:[
+   {name:"Liu Bang (Emperor Gaozu)",title:"Emperor",start:-206,end:-195},
+   {name:"Emperor Wu (Liu Che)",title:"Emperor",start:-141,end:-87},
+   {name:"Wang Mang",title:"Emperor (Xin Dynasty interregnum)",start:9,end:23},
+   {name:"Emperor Guangwu (Liu Xiu)",title:"Emperor (Eastern Han)",start:25,end:57},
+   {name:"Emperor Xian",title:"Emperor (last)",start:189,end:220},
+ ],
+ events:[
+   {year:-206,desc:"Han Dynasty founded; Silk Road trade begins"},
+   {year:-130,desc:"Emperor Wu expands empire; defeats Xiongnu"},
+   {year:-105,desc:"Zhang Qian opens Silk Road to Central Asia"},
+   {year:105,desc:"Cai Lun invents modern papermaking"},
+   {year:220,desc:"Han Dynasty collapses; Three Kingdoms period begins"},
+ ]},
+{civ:"china",name:"Tang Dynasty",start:618,end:907,color:"#e11d48",
+ subtitle:"Golden Age of Chinese Civilization",
+ leaders:[
+   {name:"Emperor Gaozu (Li Yuan)",title:"Emperor",start:618,end:626},
+   {name:"Emperor Taizong (Li Shimin)",title:"Emperor",start:626,end:649},
+   {name:"Empress Wu Zetian",title:"Empress Regnant",start:690,end:705},
+   {name:"Emperor Xuanzong",title:"Emperor",start:712,end:756},
+   {name:"Emperor Aizong",title:"Emperor (last)",start:904,end:907},
+ ],
+ events:[
+   {year:618,desc:"Tang Dynasty founded; most cosmopolitan empire of its era"},
+   {year:629,desc:"Xuanzang travels to India for Buddhist scriptures (basis of Journey to the West)"},
+   {year:690,desc:"Empress Wu Zetian — only woman to rule China as emperor"},
+   {year:751,desc:"Battle of Talas River — Tang defeated by Abbasid Arabs; papermaking spreads west"},
+   {year:868,desc:"Diamond Sutra printed — world's oldest dated printed book"},
+ ]},
+{civ:"china",name:"Song Dynasty",start:960,end:1279,color:"#be123c",
+ subtitle:"Economic Revolution & Inventions",
+ leaders:[
+   {name:"Emperor Taizu (Zhao Kuangyin)",title:"Emperor",start:960,end:976},
+   {name:"Emperor Taizong",title:"Emperor",start:976,end:997},
+   {name:"Emperor Huizong",title:"Emperor",start:1100,end:1125},
+   {name:"Emperor Lizong",title:"Emperor (last Southern)",start:1224,end:1264},
+ ],
+ events:[
+   {year:960,desc:"Song Dynasty founded; world's first paper money (banknotes) issued"},
+   {year:1040,desc:"Bi Sheng invents movable type printing — 400 years before Gutenberg"},
+   {year:1100,desc:"China's GDP at ~30% of world total — most advanced economy"},
+   {year:1127,desc:"Jurchen Jin Dynasty captures northern China; Southern Song established"},
+   {year:1279,desc:"Mongol forces under Kublai Khan conquer Southern Song"},
+ ]},
+{civ:"china",name:"Yuan Dynasty",start:1271,end:1368,color:"#9f1239",
+ subtitle:"Mongol Rule of China",
+ leaders:[
+   {name:"Kublai Khan",title:"Emperor",start:1271,end:1294},
+   {name:"Temür Khan",title:"Emperor",start:1294,end:1307},
+   {name:"Toghon Temür",title:"Emperor (last)",start:1333,end:1368},
+ ],
+ events:[
+   {year:1271,desc:"Kublai Khan founds Yuan Dynasty; Beijing (Khanbaliq) becomes capital"},
+   {year:1275,desc:"Marco Polo arrives at Kublai Khan's court"},
+   {year:1281,desc:"Mongol fleet destroyed by typhoon (kamikaze) attacking Japan"},
+   {year:1368,desc:"Han Chinese rebel; Zhu Yuanzhang founds Ming Dynasty"},
+ ]},
+{civ:"china",name:"Ming Dynasty",start:1368,end:1644,color:"#e11d48",
+ subtitle:"Great Wall & Age of Exploration",
+ leaders:[
+   {name:"Zhu Yuanzhang (Hongwu Emperor)",title:"Emperor",start:1368,end:1398},
+   {name:"Yongle Emperor (Zhu Di)",title:"Emperor",start:1402,end:1424},
+   {name:"Xuande Emperor",title:"Emperor",start:1425,end:1435},
+   {name:"Wanli Emperor",title:"Emperor",start:1572,end:1620},
+   {name:"Chongzhen Emperor",title:"Emperor (last)",start:1627,end:1644},
+ ],
+ events:[
+   {year:1406,desc:"Construction of the Forbidden City begins"},
+   {year:1405,desc:"Zheng He's treasure fleet voyages begin — reaches East Africa"},
+   {year:1421,desc:"Capital moved from Nanjing to Beijing"},
+   {year:1449,desc:"Tumu Crisis — Emperor Zhengtong captured by Mongols"},
+   {year:1644,desc:"Li Zicheng captures Beijing; Chongzhen Emperor hangs himself; Qing invades"},
+ ]},
+{civ:"china",name:"Qing Dynasty",start:1644,end:1912,color:"#be123c",
+ subtitle:"Last Imperial Dynasty",
+ leaders:[
+   {name:"Shunzhi Emperor",title:"Emperor",start:1644,end:1661},
+   {name:"Kangxi Emperor",title:"Emperor",start:1661,end:1722},
+   {name:"Yongzheng Emperor",title:"Emperor",start:1722,end:1735},
+   {name:"Qianlong Emperor",title:"Emperor",start:1735,end:1796},
+   {name:"Daoguang Emperor",title:"Emperor",start:1820,end:1850},
+   {name:"Xianfeng Emperor",title:"Emperor",start:1850,end:1861},
+   {name:"Empress Dowager Cixi",title:"Regent",start:1861,end:1908},
+   {name:"Xuantong Emperor (Puyi)",title:"Emperor (last)",start:1908,end:1912},
+ ],
+ events:[
+   {year:1644,desc:"Manchu Qing Dynasty conquers China"},
+   {year:1793,desc:"Macartney Mission — Britain's trade requests rejected by Qianlong Emperor"},
+   {year:1839,desc:"First Opium War begins with China"},
+   {year:1850,desc:"Taiping Rebellion kills 20-30 million — deadliest civil war in history"},
+   {year:1894,desc:"First Sino-Japanese War; China loses Taiwan"},
+   {year:1900,desc:"Boxer Rebellion; Eight-Nation Alliance occupies Beijing"},
+   {year:1912,desc:"Xinhai Revolution; Puyi abdicates; Republic of China established"},
+ ]},
+{civ:"china",name:"Republic of China",start:1912,end:1949,color:"#9f1239",
+ subtitle:"Nationalist China",
+ leaders:[
+   {name:"Sun Yat-sen",title:"President",start:1912,end:1913},
+   {name:"Yuan Shikai",title:"President",start:1913,end:1916},
+   {name:"Chiang Kai-shek",title:"Generalissimo",start:1928,end:1949},
+ ],
+ events:[
+   {year:1912,desc:"Republic of China proclaimed; end of 2,000 years of imperial rule"},
+   {year:1921,desc:"Chinese Communist Party founded"},
+   {year:1927,desc:"Chinese Civil War begins between Nationalists and Communists"},
+   {year:1937,desc:"Japan invades China; Nanjing Massacre"},
+   {year:1945,desc:"Japan defeated; civil war resumes"},
+   {year:1949,desc:"Communists win; Chiang Kai-shek retreats to Taiwan"},
+ ]},
+{civ:"china",name:"People's Republic of China",start:1949,end:2025,color:"#e11d48",
+ subtitle:"Communist China",
+ leaders:[
+   {name:"Mao Zedong",title:"Chairman",start:1949,end:1976},
+   {name:"Hua Guofeng",title:"Chairman",start:1976,end:1978},
+   {name:"Deng Xiaoping",title:"Paramount Leader",start:1978,end:1989},
+   {name:"Jiang Zemin",title:"General Secretary",start:1989,end:2002},
+   {name:"Hu Jintao",title:"General Secretary",start:2002,end:2012},
+   {name:"Xi Jinping",title:"General Secretary",start:2012,end:2025},
+ ],
+ events:[
+   {year:1949,desc:"PRC founded; Mao Zedong announces 'China has stood up'"},
+   {year:1958,desc:"Great Leap Forward causes famine killing 15-55 million"},
+   {year:1966,desc:"Cultural Revolution begins; traditional culture attacked"},
+   {year:1972,desc:"Nixon visits China; diplomatic normalization"},
+   {year:1978,desc:"Deng Xiaoping's Reform and Opening Up policy"},
+   {year:1989,desc:"Tiananmen Square massacre"},
+   {year:2001,desc:"China joins WTO; economic boom accelerates"},
+ ]},
+
+// ═══════════════ NOMADIC / STEPPE ═══════════════
+{civ:"nomadic",name:"Xiongnu Empire",start:-209,end:93,color:"#92400e",
+ subtitle:"First Great Steppe Empire",
+ leaders:[
+   {name:"Touman",title:"Chanyu",start:-220,end:-209},
+   {name:"Modu Chanyu",title:"Chanyu (founder of empire)",start:-209,end:-174},
+   {name:"Laoshang Chanyu",title:"Chanyu",start:-174,end:-160},
+ ],
+ events:[
+   {year:-209,desc:"Modu Chanyu unites steppe tribes; Xiongnu Empire established"},
+   {year:-200,desc:"Battle of Baideng — Xiongnu besieges Han Emperor Gaozu"},
+   {year:-133,desc:"Han-Xiongnu Wars begin under Emperor Wu"},
+ ]},
+{civ:"nomadic",name:"Mongol Empire",start:1206,end:1368,color:"#78350f",
+ subtitle:"Largest Contiguous Land Empire",
+ leaders:[
+   {name:"Genghis Khan (Temüjin)",title:"Great Khan (founder)",start:1206,end:1227},
+   {name:"Ögedei Khan",title:"Great Khan",start:1229,end:1241},
+   {name:"Güyük Khan",title:"Great Khan",start:1246,end:1248},
+   {name:"Möngke Khan",title:"Great Khan",start:1251,end:1259},
+   {name:"Kublai Khan",title:"Great Khan",start:1260,end:1294},
+ ],
+ events:[
+   {year:1206,desc:"Temüjin proclaimed Genghis Khan; Mongol Empire founded"},
+   {year:1215,desc:"Mongols sack Zhongdu (Beijing); Jin Dynasty conquered"},
+   {year:1241,desc:"Battle of Legnica — Mongols devastate Poland and Hungary"},
+   {year:1258,desc:"Mongols destroy Baghdad; end of Abbasid Caliphate"},
+   {year:1260,desc:"Battle of Ain Jalut — Mamluks defeat Mongols; first major Mongol defeat"},
+   {year:1274,desc:"First Mongol invasion of Japan fails due to storm"},
+   {year:1279,desc:"Kublai Khan conquers Song China; Yuan Dynasty established"},
+ ]},
+
+// ═══════════════ JAPAN / KOREA ═══════════════
+{civ:"japkorea",name:"Goryeo (Koryo) Kingdom",start:918,end:1392,color:"#be185d",
+ subtitle:"Origin of the name 'Korea'",
+ leaders:[
+   {name:"Wang Geon (Taejo)",title:"King (founder)",start:918,end:943},
+   {name:"Gwangjong",title:"King",start:949,end:975},
+   {name:"Gongmin",title:"King",start:1351,end:1374},
+ ],
+ events:[
+   {year:918,desc:"Wang Geon unifies Korean Peninsula; Goryeo kingdom founded"},
+   {year:1145,desc:"Samguk Sagi — official Korean history compiled"},
+   {year:1234,desc:"World's first metal movable type printing system developed in Korea"},
+   {year:1270,desc:"Korea becomes Mongol vassal state"},
+   {year:1392,desc:"General Yi Seonggye overthrows Goryeo; Joseon Dynasty begins"},
+ ]},
+{civ:"japkorea",name:"Joseon Dynasty",start:1392,end:1897,color:"#9d174d",
+ subtitle:"Confucian Kingdom of Korea",
+ leaders:[
+   {name:"Yi Seonggye (Taejo)",title:"King (founder)",start:1392,end:1398},
+   {name:"Sejong the Great",title:"King",start:1418,end:1450},
+   {name:"Yeonsangun",title:"King",start:1494,end:1506},
+   {name:"Gojong",title:"King / Emperor",start:1863,end:1907},
+ ],
+ events:[
+   {year:1392,desc:"Joseon Dynasty founded; Confucianism becomes state ideology"},
+   {year:1443,desc:"King Sejong invents Hangul alphabet for Korean language"},
+   {year:1592,desc:"Japanese invasions (Imjin War); Admiral Yi Sun-sin's turtle ships defeat Japan"},
+   {year:1627,desc:"Qing Dynasty invades Korea"},
+   {year:1897,desc:"Joseon proclaimed Korean Empire"},
+ ]},
+{civ:"japkorea",name:"Yamato / Heian Japan",start:300,end:1185,color:"#be185d",
+ subtitle:"Imperial Japan's Early Period",
+ leaders:[
+   {name:"Emperor Jimmu",title:"Emperor (legendary founder)",start:-660,end:-585},
+   {name:"Prince Shotoku",title:"Regent",start:593,end:622},
+   {name:"Emperor Kanmu",title:"Emperor",start:781,end:806},
+   {name:"Emperor Go-Shirakawa",title:"Emperor",start:1155,end:1158},
+ ],
+ events:[
+   {year:593,desc:"Prince Shotoku promotes Buddhism and Chinese governance models"},
+   {year:645,desc:"Taika Reform — Chinese-style centralized administration adopted"},
+   {year:710,desc:"Nara established as first permanent capital"},
+   {year:794,desc:"Capital moved to Heian-kyo (Kyoto); Heian period begins"},
+   {year:1000,desc:"The Tale of Genji written by Murasaki Shikibu — world's first novel"},
+ ]},
+{civ:"japkorea",name:"Shogunate Japan",start:1185,end:1868,color:"#9d174d",
+ subtitle:"Samurai Warrior Rule",
+ leaders:[
+   {name:"Minamoto no Yoritomo",title:"Shogun (first)",start:1185,end:1199},
+   {name:"Ashikaga Takauji",title:"Shogun",start:1338,end:1358},
+   {name:"Oda Nobunaga",title:"Daimyo / Unifier",start:1560,end:1582},
+   {name:"Toyotomi Hideyoshi",title:"Regent",start:1585,end:1598},
+   {name:"Tokugawa Ieyasu",title:"Shogun",start:1603,end:1616},
+   {name:"Tokugawa Yoshinobu",title:"Shogun (last)",start:1866,end:1868},
+ ],
+ events:[
+   {year:1185,desc:"Minamoto no Yoritomo becomes Shogun; samurai class rules Japan"},
+   {year:1274,desc:"First Mongol invasion of Japan repelled with help of typhoon"},
+   {year:1543,desc:"Portuguese traders bring firearms to Japan"},
+   {year:1603,desc:"Tokugawa Ieyasu becomes Shogun; Edo (Tokyo) becomes capital"},
+   {year:1639,desc:"Japan enters sakoku — 200-year period of isolation"},
+   {year:1853,desc:"Commodore Perry's 'Black Ships' force Japan to open to trade"},
+   {year:1868,desc:"Meiji Restoration — Emperor restored; modernization begins"},
+ ]},
+{civ:"japkorea",name:"Meiji-Era Japan",start:1868,end:1945,color:"#be185d",
+ subtitle:"Imperial Modernization & War",
+ leaders:[
+   {name:"Emperor Meiji",title:"Emperor",start:1868,end:1912},
+   {name:"Emperor Taisho",title:"Emperor",start:1912,end:1926},
+   {name:"Emperor Showa (Hirohito)",title:"Emperor",start:1926,end:1989},
+ ],
+ events:[
+   {year:1868,desc:"Meiji Restoration; Japan adopts Western institutions rapidly"},
+   {year:1894,desc:"First Sino-Japanese War; Japan defeats China and takes Taiwan"},
+   {year:1905,desc:"Battle of Tsushima — Japan defeats Russia; first Asian power to beat European"},
+   {year:1937,desc:"Second Sino-Japanese War begins; Nanjing Massacre"},
+   {year:1941,desc:"Attack on Pearl Harbor; Japan enters World War II"},
+   {year:1945,desc:"Hiroshima and Nagasaki bombed; Japan surrenders"},
+ ]},
+
+// ═══════════════ GERMANIC ═══════════════
+{civ:"germanic",name:"Frankish Kingdom",start:481,end:843,color:"#0891b2",
+ subtitle:"Merovingian & Carolingian",
+ leaders:[
+   {name:"Clovis I",title:"King (Merovingian)",start:481,end:511},
+   {name:"Charles Martel",title:"Mayor of the Palace",start:718,end:741},
+   {name:"Pippin III (the Short)",title:"King",start:751,end:768},
+   {name:"Charlemagne",title:"King / Emperor",start:768,end:814},
+   {name:"Louis the Pious",title:"Emperor",start:814,end:840},
+ ],
+ events:[
+   {year:481,desc:"Clovis I unites Frankish tribes; converts to Christianity"},
+   {year:732,desc:"Battle of Tours — Charles Martel halts Muslim advance into Europe"},
+   {year:800,desc:"Charlemagne crowned Emperor by Pope Leo III"},
+   {year:843,desc:"Treaty of Verdun splits Carolingian Empire into three kingdoms"},
+ ]},
+{civ:"germanic",name:"British Empire",start:1583,end:1997,color:"#0e7490",
+ subtitle:"Empire on which the Sun Never Set",
+ leaders:[
+   {name:"Queen Elizabeth I",title:"Queen",start:1558,end:1603},
+   {name:"Oliver Cromwell",title:"Lord Protector",start:1653,end:1658},
+   {name:"Queen Victoria",title:"Queen / Empress",start:1837,end:1901},
+   {name:"Winston Churchill",title:"Prime Minister",start:1940,end:1945},
+   {name:"Margaret Thatcher",title:"Prime Minister",start:1979,end:1990},
+ ],
+ events:[
+   {year:1588,desc:"Defeat of the Spanish Armada; England becomes naval power"},
+   {year:1600,desc:"East India Company founded"},
+   {year:1776,desc:"American colonies declare independence"},
+   {year:1807,desc:"Slave Trade Act abolishes slave trade in British Empire"},
+   {year:1857,desc:"Indian Rebellion; Crown takes direct control of India"},
+   {year:1914,desc:"Britain enters World War I"},
+   {year:1947,desc:"India gains independence; rapid decolonization begins"},
+   {year:1997,desc:"Hong Kong returned to China"},
+ ]},
+
+// ═══════════════ SLAVIC ═══════════════
+{civ:"slavic",name:"Kievan Rus",start:882,end:1240,color:"#0d9488",
+ subtitle:"First East Slavic State",
+ leaders:[
+   {name:"Oleg of Novgorod",title:"Prince",start:882,end:912},
+   {name:"Vladimir the Great",title:"Grand Prince",start:980,end:1015},
+   {name:"Yaroslav the Wise",title:"Grand Prince",start:1019,end:1054},
+ ],
+ events:[
+   {year:882,desc:"Oleg captures Kiev; Kievan Rus established"},
+   {year:988,desc:"Vladimir the Great converts to Orthodox Christianity"},
+   {year:1015,desc:"Yaroslav the Wise codifies Russian law (Russkaya Pravda)"},
+   {year:1240,desc:"Mongols sack Kiev; Kievan Rus destroyed"},
+ ]},
+{civ:"slavic",name:"Russian Empire",start:1721,end:1917,color:"#134e4a",
+ subtitle:"Romanov Dynasty",
+ leaders:[
+   {name:"Peter I (the Great)",title:"Tsar/Emperor",start:1682,end:1725},
+   {name:"Catherine II (the Great)",title:"Empress",start:1762,end:1796},
+   {name:"Alexander I",title:"Emperor",start:1801,end:1825},
+   {name:"Nicholas I",title:"Emperor",start:1825,end:1855},
+   {name:"Alexander II",title:"Emperor",start:1855,end:1881},
+   {name:"Nicholas II",title:"Emperor (last)",start:1894,end:1917},
+ ],
+ events:[
+   {year:1703,desc:"Peter the Great founds St. Petersburg as a 'window to Europe'"},
+   {year:1812,desc:"Napoleon invades Russia; Moscow burns; French army destroyed"},
+   {year:1861,desc:"Alexander II abolishes serfdom"},
+   {year:1905,desc:"Bloody Sunday; Revolution of 1905 forces limited constitutional reform"},
+   {year:1917,desc:"February Revolution; Tsar Nicholas II abdicates"},
+ ]},
+{civ:"slavic",name:"Soviet Union",start:1922,end:1991,color:"#0f766e",
+ subtitle:"USSR — Communist Superpower",
+ leaders:[
+   {name:"Vladimir Lenin",title:"Premier",start:1922,end:1924},
+   {name:"Joseph Stalin",title:"General Secretary",start:1924,end:1953},
+   {name:"Nikita Khrushchev",title:"General Secretary",start:1953,end:1964},
+   {name:"Leonid Brezhnev",title:"General Secretary",start:1964,end:1982},
+   {name:"Mikhail Gorbachev",title:"General Secretary (last)",start:1985,end:1991},
+ ],
+ events:[
+   {year:1922,desc:"USSR formally established"},
+   {year:1932,desc:"Holodomor — Stalin's policies cause Ukrainian famine killing millions"},
+   {year:1941,desc:"Operation Barbarossa — Nazi Germany invades USSR"},
+   {year:1945,desc:"USSR defeats Germany; occupies Eastern Europe"},
+   {year:1957,desc:"Sputnik launched — first artificial satellite"},
+   {year:1961,desc:"Yuri Gagarin becomes first human in space"},
+   {year:1991,desc:"USSR dissolved; 15 independent states emerge"},
+ ]},
+
+// ═══════════════ AMERICAS ═══════════════
+{civ:"americas",name:"Maya Civilization",start:-2000,end:1697,color:"#7c3aed",
+ subtitle:"Mesoamerican City-States",
+ leaders:[
+   {name:"K'inich Janaab' Pakal",title:"King of Palenque",start:615,end:683},
+   {name:"Spearthrower Owl",title:"King of Teotihuacan",start:374,end:439},
+ ],
+ events:[
+   {year:-2000,desc:"Maya civilization emerges in Mesoamerica"},
+   {year:250,desc:"Maya Classic Period begins; major cities like Tikal flourish"},
+   {year:683,desc:"Pakal the Great buried in the Temple of Inscriptions at Palenque"},
+   {year:900,desc:"Maya Classic collapse — major cities abandoned"},
+   {year:1519,desc:"Spanish conquistadors arrive; Maya civilization severely disrupted"},
+ ]},
+{civ:"americas",name:"Aztec Empire",start:1428,end:1521,color:"#6d28d9",
+ subtitle:"Triple Alliance of Mesoamerica",
+ leaders:[
+   {name:"Itzcoatl",title:"Huey Tlatoani (founder)",start:1427,end:1440},
+   {name:"Moctezuma I",title:"Huey Tlatoani",start:1440,end:1469},
+   {name:"Moctezuma II",title:"Huey Tlatoani",start:1502,end:1520},
+   {name:"Cuauhtémoc",title:"Huey Tlatoani (last)",start:1520,end:1521},
+ ],
+ events:[
+   {year:1428,desc:"Triple Alliance formed; Aztec Empire begins rapid expansion"},
+   {year:1487,desc:"Great Pyramid of Tenochtitlan dedicated; mass sacrifices"},
+   {year:1519,desc:"Hernán Cortés arrives; Moctezuma II meets Spanish"},
+   {year:1521,desc:"Cortés captures Tenochtitlan; Aztec Empire destroyed"},
+ ]},
+{civ:"americas",name:"Inca Empire",start:1438,end:1572,color:"#5b21b6",
+ subtitle:"Largest Pre-Columbian Empire",
+ leaders:[
+   {name:"Pachacuti",title:"Sapa Inca (founder)",start:1438,end:1471},
+   {name:"Tupac Inca Yupanqui",title:"Sapa Inca",start:1471,end:1493},
+   {name:"Huayna Capac",title:"Sapa Inca",start:1493,end:1527},
+   {name:"Atahualpa",title:"Sapa Inca (last)",start:1532,end:1533},
+ ],
+ events:[
+   {year:1438,desc:"Pachacuti expands Inca Empire across Andes"},
+   {year:1450,desc:"Machu Picchu built as royal estate"},
+   {year:1532,desc:"Pizarro captures Atahualpa at Cajamarca; empire collapses"},
+ ]},
+];
+
+// ── Build layout ──────────────────────────────────────────────────────────────
+const TOTAL_YEARS = MAX_YEAR - MIN_YEAR;
+const TOTAL_HEIGHT = TOTAL_YEARS * PX_PER_YEAR;
+const HEADER_H = 44;
+
+function yearToY(year) {
+  return ((year - MIN_YEAR) / TOTAL_YEARS) * TOTAL_HEIGHT + HEADER_H;
+}
+
+function buildTimeline() {
+  const axisEl = document.getElementById("year-axis");
+  const colsEl = document.getElementById("columns-area");
+
+  // Era labels on axis
+  const eras = [
+    {year:-4000,label:"4000 BCE"},{year:-3000,label:"3000 BCE"},{year:-2000,label:"2000 BCE"},
+    {year:-1000,label:"1000 BCE"},{year:-500,label:"500 BCE"},{year:0,label:"0 CE"},
+    {year:500,label:"500 CE"},{year:1000,label:"1000 CE"},{year:1200,label:"1200 CE"},
+    {year:1400,label:"1400 CE"},{year:1600,label:"1600 CE"},{year:1800,label:"1800 CE"},
+    {year:1900,label:"1900"},{year:1950,label:"1950"},{year:2000,label:"2000"},
+  ];
+
+  axisEl.style.position = "relative";
+  axisEl.style.height = (TOTAL_HEIGHT + HEADER_H + 10) + "px";
+
+  // Axis header
+  const axisHdr = document.createElement("div");
+  axisHdr.style.cssText = "height:44px;position:sticky;top:0;background:#111827;z-index:11;border-bottom:1px solid #1e3448;";
+  axisEl.appendChild(axisHdr);
+
+  eras.forEach(({year,label}) => {
+    const tick = document.createElement("div");
+    const top = yearToY(year);
+    tick.style.cssText = `position:absolute;top:${top}px;left:0;right:0;`;
+    tick.innerHTML = `<span style="font-size:0.6rem;color:#4a7fa5;padding:1px 4px;display:block">${label}</span>`;
+    axisEl.appendChild(tick);
+
+    // Horizontal grid line across all cols
+    const line = document.createElement("div");
+    line.style.cssText = `position:absolute;top:${top}px;left:0;right:0;border-top:1px dashed #1e3448;pointer-events:none;z-index:1`;
+    axisEl.appendChild(line);
+  });
+
+  // Build civ columns
+  CIVS.forEach(civ => {
+    const col = document.createElement("div");
+    col.className = "civ-col";
+    col.style.height = (TOTAL_HEIGHT + HEADER_H + 10) + "px";
+
+    const hdr = document.createElement("div");
+    hdr.className = "civ-header";
+    hdr.style.borderBottomColor = civ.color;
+    hdr.style.color = civ.color;
+    hdr.textContent = civ.label;
+    col.appendChild(hdr);
+
+    colsEl.appendChild(col);
+    civ._el = col;
+  });
+
+  // Place blocks
+  BLOCKS.forEach(b => {
+    const civObj = CIVS.find(c => c.id === b.civ);
+    if (!civObj) return;
+
+    const top = yearToY(b.start);
+    const bottom = yearToY(b.end);
+    const height = Math.max(bottom - top, 16);
+
+    const el = document.createElement("div");
+    el.className = "block";
+    el.style.cssText = `top:${top}px;height:${height}px;background:${b.color};color:#fff;`;
+    el.innerHTML = `<span>${b.name}</span>`;
+    el.title = `${b.name} (${yLabel(b.start)} – ${yLabel(b.end)})`;
+
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      document.querySelectorAll(".block.active").forEach(x => x.classList.remove("active"));
+      el.classList.add("active");
+      showPanel(b);
+    });
+
+    civObj._el.appendChild(el);
+  });
+}
+
+function showPanel(b) {
+  document.getElementById("panel-placeholder").style.display = "none";
+  const detail = document.getElementById("panel-detail");
+  detail.style.display = "block";
+
+  document.getElementById("panel-bar").style.background = b.color;
+  document.getElementById("panel-title").textContent = b.name;
+  document.getElementById("panel-subtitle").textContent = b.subtitle || "";
+  document.getElementById("panel-years").textContent =
+    `${yLabel(b.start)} – ${yLabel(b.end)}  ·  ${duration(b.start, b.end)}`;
+
+  // Leaders
+  const leadersEl = document.getElementById("panel-leaders");
+  if (b.leaders && b.leaders.length) {
+    leadersEl.innerHTML = b.leaders.map(l => {
+      const dur = l.end - l.start;
+      return `
+      <div class="leader-row">
+        <div>
+          <div class="leader-name">${l.name}</div>
+          <div class="leader-title">${l.title}</div>
+        </div>
+        <div class="leader-years">
+          <div>${yLabel(l.start)}</div>
+          <div class="leader-duration">${dur > 0 ? dur + " yr" + (dur !== 1 ? "s" : "") : "< 1 yr"}</div>
+        </div>
+      </div>`;
+    }).join("");
+  } else {
+    leadersEl.innerHTML = "<div style='color:#4a6380;font-size:.8rem;padding:8px 0'>No leader data available</div>";
+  }
+
+  // Events
+  const eventsEl = document.getElementById("panel-events");
+  if (b.events && b.events.length) {
+    eventsEl.innerHTML = b.events.map(ev =>
+      `<div class="event-row">
+        <div class="event-year">${yLabel(ev.year)}</div>
+        <div class="event-desc">${ev.desc}</div>
+      </div>`
+    ).join("");
+  } else {
+    eventsEl.innerHTML = "<div style='color:#4a6380;font-size:.8rem;padding:8px 0'>No events recorded</div>";
+  }
+
+  // Scroll panel to top
+  document.getElementById("panel-inner").scrollTop = 0;
+}
+
+buildTimeline();
+</script>
+</body>
+</html>
